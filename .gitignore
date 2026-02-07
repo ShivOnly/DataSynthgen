@@ -1,0 +1,19 @@
+# =========================
+# Python / Backend
+# =========================
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Env
+.env
+
+
+# macOS junk (from OneDrive / Finder)
+.DS_Store
