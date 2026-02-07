@@ -1,0 +1,237 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------
+   Global colors + instant switch
+   --------------------------- */
+@layer base {
+  :root {
+    /* tune if you want general UI transitions elsewhere */
+    --theme-duration: 220ms;
+    --theme-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* Light baseline */
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+
+  /* Dark baseline when <html class="dark"> or <html data-theme="dark"> */
+  .dark body,
+  [data-theme="dark"] body {
+    @apply bg-slate-950 text-slate-100;
+  }
+
+  /* ----------------------------------------------------
+     INSTANT THEME SWITCH (no perceptible transition)
+     We disable ALL transitions just for the theme flip.
+     ---------------------------------------------------- */
+  html.theme-switching *,
+  html.theme-switching *::before,
+  html.theme-switching *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* (Optional) Your normal UI transitions can still exist locally,
+     e.g. buttons/cards using Tailwind's `transition-colors`.
+     We don't add global `* { transition: ... }` here so the
+     theme flip remains truly instant and unnoticeable. */
+
+  /* Accessibility: if you later enable broader transitions,
+     respect reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}
+
+/* Minimal, unobtrusive scrollbars */
+.thin-scrollbar {
+  scrollbar-width: thin;                  /* Firefox */
+  scrollbar-color: #9ca3af1f transparent; /* thumb / track */
+}
+.thin-scrollbar::-webkit-scrollbar {
+  height: 6px;    /* horizontal */
+  width: 6px;     /* vertical */
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #9ca3af66;            /* gray-400 with alpha */
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #9ca3afaa;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ======================================================
+   macOS Blue + Glass Layer (big-sur/sonoma vibe)
+   ====================================================== */
+
+/* Design tokens for mac look */
+@layer base {
+  :root {
+    /* Accent */
+    --mac-blue: #0A84FF;
+    --mac-blue-600: #0a76e6;
+    --mac-blue-700: #0868cc;
+
+    /* Text */
+    --ink: #0f172a;
+    --ink-muted: #475569;
+
+    /* Glass surfaces */
+    --glass: rgba(255, 255, 255, 0.72);
+    --glass-strong: rgba(255, 255, 255, 0.85);
+
+    /* Borders & shadows */
+    --glass-border: rgba(148, 163, 184, 0.35);
+    --glass-border-strong: rgba(148, 163, 184, 0.55);
+    --glass-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+
+    /* Focus ring */
+    --mac-ring: 0 0 0 3px rgba(10, 132, 255, 0.35);
+  }
+
+  .dark {
+    --ink: #e5e7eb;
+    --ink-muted: #9ca3af;
+
+    --glass: rgba(2, 6, 23, 0.65);
+    --glass-strong: rgba(2, 6, 23, 0.8);
+
+    --glass-border: rgba(148, 163, 184, 0.22);
+    --glass-border-strong: rgba(148, 163, 184, 0.38);
+    --glass-shadow: 0 16px 40px rgba(2, 6, 23, 0.5);
+
+    --mac-ring: 0 0 0 3px rgba(10, 132, 255, 0.45);
+  }
+
+  /* Selection tint */
+  ::selection {
+    background: color-mix(in srgb, var(--mac-blue) 24%, transparent);
+  }
+}
+
+/* App backdrop (blueish mac gradient + subtle glows) */
+.mac-app-bg {
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 420px at 10% -10%, rgba(10,132,255,0.18), transparent 55%),
+    radial-gradient(900px 420px at 100% 110%, rgba(10,132,255,0.12), transparent 60%),
+    linear-gradient(180deg, #f6f9ff 0%, #eef3ff 35%, #f8fafc 100%);
+}
+.dark .mac-app-bg {
+  background:
+    radial-gradient(900px 420px at 10% -10%, rgba(10,132,255,0.25), transparent 55%),
+    radial-gradient(900px 420px at 100% 110%, rgba(10,132,255,0.18), transparent 60%),
+    linear-gradient(180deg, #0b1020 0%, #0d1225 100%);
+}
+
+/* Re-usable glass cards for your Step containers */
+.mac-card {
+  background: var(--glass);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--glass-border);
+  border-radius: 22px;
+  box-shadow: var(--glass-shadow);
+}
+
+/* Input family: select, textarea, inputs — mac focus ring */
+.mac-input {
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  outline: none;
+  transition: border-color var(--theme-duration) var(--theme-ease),
+              box-shadow var(--theme-duration) var(--theme-ease),
+              background-color var(--theme-duration) var(--theme-ease);
+  color: var(--ink);
+}
+.mac-input:focus-visible {
+  border-color: var(--mac-blue);
+  box-shadow: var(--mac-ring);
+}
+
+/* Apply mac-input universally without touching your TSX */
+@layer base {
+  select,
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="search"],
+  textarea {
+    background: var(--glass-strong);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    outline: none;
+    color: var(--ink);
+  }
+  select:focus-visible,
+  input[type="text"]:focus-visible,
+  input[type="number"]:focus-visible,
+  input[type="email"]:focus-visible,
+  input[type="search"]:focus-visible,
+  textarea:focus-visible {
+    border-color: var(--mac-blue);
+    box-shadow: var(--mac-ring);
+  }
+}
+
+/* Schema selection tiles (AI / Web) */
+.mac-tile {
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  padding: 1.25rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  transition: box-shadow 200ms ease, border-color 200ms ease, transform 200ms ease;
+  box-shadow: var(--glass-shadow);
+}
+.mac-tile:hover {
+  border-color: var(--mac-blue);
+  box-shadow: 0 12px 28px rgba(10,132,255,0.25);
+  transform: translateY(-1px);
+}
+
+/* Primary action button (Generate / Download) */
+.mac-primary {
+  background: var(--mac-blue);
+  color: white;
+  border-radius: 14px;
+  font-weight: 600;
+  padding: 0.70rem 1rem;
+  box-shadow: 0 8px 20px rgba(10,132,255,0.35);
+  transition: background-color var(--theme-duration) var(--theme-ease),
+              transform var(--theme-duration) var(--theme-ease),
+              box-shadow var(--theme-duration) var(--theme-ease);
+}
+.mac-primary:hover {
+  background: var(--mac-blue-600);
+  box-shadow: 0 10px 26px rgba(10,132,255,0.42);
+}
+.mac-primary:active { transform: translateY(1px); }
+
+/* Subtle glass button (ghost) */
+.mac-ghost {
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 0.70rem 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  transition: border-color var(--theme-duration) var(--theme-ease),
+              background-color var(--theme-duration) var(--theme-ease);
+}
+.dark .mac-ghost { color: #e2e8f0; }
+.mac-ghost:hover { border-color: var(--glass-border-strong); }
