@@ -19,7 +19,7 @@ class Field(BaseModel):
 
 
 class GenerateReasoningReq(BaseModel):
-    schema: List[Field] = PydField(default_factory=list)
+    schema_fields: List[Field] = PydField(default_factory=list)
     generatorMode: Literal["ai", "web"]
     dataset: List[Dict[str, Any]] = PydField(default_factory=list)
     criteria: List[str] = PydField(default_factory=list)
@@ -36,7 +36,7 @@ class GenerateReasoningResp(BaseModel):
 
 def build_prompt(req: GenerateReasoningReq) -> str:
     schema_text = "\n".join(
-        f"- {f.name}: {f.description or 'n/a'}" for f in req.schema
+        f"- {f.name}: {f.description or 'n/a'}" for f in req.schema_fields
     ) or "- (empty schema)"
 
     criteria_text = "\n".join(

@@ -57,7 +57,7 @@ export default function ResizableSplit({
         <>
           {/* Left pane */}
           <div className="absolute top-0 left-0 h-full overflow-hidden" style={{ width: leftPx }}>
-            <div className="h-full">{left}</div>
+            <div className="h-full overflow-auto">{left}</div>
           </div>
 
           {/* Handle */}
@@ -78,7 +78,7 @@ export default function ResizableSplit({
             className="absolute top-0 right-0 h-full overflow-hidden"
             style={{ left: leftPx, width: `calc(100% - ${leftPx}px)` }}
           >
-            <div className="h-full">{right}</div>
+            <div className="h-full overflow-auto">{right}</div>
           </div>
         </>
       )}

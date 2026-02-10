@@ -448,7 +448,7 @@ body: JSON.stringify({
   return (
     <div className="flex min-h-screen transition-colors duration-500" style={{ ['--app-header-h' as any]: '72px' }}>
       <Header />
-      <div className="fixed z-50 right-3 md:right-6 top-2 md:top-3"><ThemeToggle /></div>
+      
 
       <Sidebar
         history={history}

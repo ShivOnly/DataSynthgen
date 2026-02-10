@@ -1,9 +1,6 @@
-"""
-Main FastAPI application with improved error handling and routing.
-"""
-
 import json
 import logging
+import re
 from typing import List, Optional, Literal, Dict
 from contextlib import asynccontextmanager
 
@@ -12,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 from groq import Groq
+from groq import AuthenticationError
 
 from config import get_settings, Settings
 from synthetic_engine import generate_dataset
@@ -201,32 +199,89 @@ async def suggest_schema(
         client = Groq(api_key=settings.groq_api_key)
 
         prompt = (
-            f"Dataset goal: {request.description}. "
-            f"Suggest exactly {request.max_fields} fields for this dataset. "
-            f"Return JSON with 'fields' array containing objects with 'name' and 'description' keys. "
-            f"Make field names concise, lowercase with underscores (snake_case). "
-            f"Provide clear, helpful descriptions."
+            f"Dataset goal: {request.description}\n\n"
+            f"Suggest exactly {request.max_fields} fields for this dataset.\n\n"
+            f"Return ONLY a JSON object (no markdown, no code blocks) with this structure:\n"
+            f'{{"fields": [{{"name": "field1", "description": "..."}}, {{"name": "field2", "description": "..."}}]}}\n\n'
+            f"Rules:\n"
+            f"- Make field names concise, lowercase with underscores (snake_case)\n"
+            f"- Provide clear, helpful descriptions\n"
+            f"- Return ONLY valid JSON, no other text"
         )
 
         temperature = getattr(settings, "model_temperature", 0.2)
 
-        completion = client.chat.completions.create(
-            model=settings.model_name,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a data schema expert. Generate clear, well-structured field definitions.",
-                },
-                {"role": "user", "content": prompt},
-            ],
-            temperature=temperature,
-            response_format={"type": "json_object"},
-        )
+        try:
+            # Try with JSON mode first
+            completion = client.chat.completions.create(
+                model=settings.model_name,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a data schema expert. Generate clear, well-structured field definitions. Output ONLY valid JSON.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=temperature,
+                response_format={"type": "json_object"},
+            )
+            content = completion.choices[0].message.content or ""
+        except Exception as json_mode_error:
+            # Fallback: try without JSON mode
+            logger.warning(f"JSON mode failed ({settings.model_name}), falling back to text parsing: {str(json_mode_error)}")
+            completion = client.chat.completions.create(
+                model=settings.model_name,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a data schema expert. Generate clear, well-structured field definitions. Output ONLY valid JSON.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=temperature,
+            )
+            content = completion.choices[0].message.content or ""
 
-        result = json.loads(completion.choices[0].message.content)
+        # Parse JSON with fallback extraction
+        result = {}
+        try:
+            result = json.loads(content)
+        except json.JSONDecodeError:
+            # Try to extract JSON from markdown code blocks
+            match = re.search(r'```(?:json)?\s*(.*?)\s*```', content, re.DOTALL)
+            if match:
+                try:
+                    result = json.loads(match.group(1))
+                except json.JSONDecodeError:
+                    pass
+            
+            # Try to find any JSON object in the content
+            if not result:
+                match = re.search(r'\{.*"fields".*\}', content, re.DOTALL)
+                if match:
+                    try:
+                        result = json.loads(match.group(0))
+                    except json.JSONDecodeError:
+                        pass
+
+        if not result or "fields" not in result:
+            logger.error(f"Failed to extract fields from response: {content[:200]}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to extract valid schema from AI response",
+            )
+
         logger.info(f"Generated {len(result.get('fields', []))} fields")
         return result
 
+    except HTTPException:
+        raise
+    except AuthenticationError as e:
+        logger.error(f"Groq API authentication error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Groq API key. Please check your GROQ_API_KEY environment variable.",
+        )
     except json.JSONDecodeError as e:
         logger.error(f"JSON decode error: {str(e)}")
         raise HTTPException(
@@ -234,7 +289,7 @@ async def suggest_schema(
             detail="Failed to parse AI response",
         )
     except Exception as e:
-        logger.error(f"Schema generation error: {str(e)}")
+        logger.error(f"Schema generation error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Schema generation failed: {str(e)}",

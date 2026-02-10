@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+ 
 /* ---------------------------
    Global colors + instant switch
    --------------------------- */
@@ -11,18 +11,18 @@
     --theme-duration: 220ms;
     --theme-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   }
-
+ 
   /* Light baseline */
   body {
     @apply bg-slate-50 text-slate-900;
   }
-
+ 
   /* Dark baseline when <html class="dark"> or <html data-theme="dark"> */
   .dark body,
   [data-theme="dark"] body {
     @apply bg-slate-950 text-slate-100;
   }
-
+ 
   /* ----------------------------------------------------
      INSTANT THEME SWITCH (no perceptible transition)
      We disable ALL transitions just for the theme flip.
@@ -33,12 +33,12 @@
     transition: none !important;
     animation: none !important;
   }
-
+ 
   /* (Optional) Your normal UI transitions can still exist locally,
      e.g. buttons/cards using Tailwind's `transition-colors`.
      We don't add global `* { transition: ... }` here so the
      theme flip remains truly instant and unnoticeable. */
-
+ 
   /* Accessibility: if you later enable broader transitions,
      respect reduced-motion */
   @media (prefers-reduced-motion: reduce) {
@@ -48,7 +48,7 @@
     }
   }
 }
-
+ 
 /* Minimal, unobtrusive scrollbars */
 .thin-scrollbar {
   scrollbar-width: thin;                  /* Firefox */
@@ -70,11 +70,11 @@
 .thin-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
-
+ 
 /* ======================================================
    macOS Blue + Glass Layer (big-sur/sonoma vibe)
    ====================================================== */
-
+ 
 /* Design tokens for mac look */
 @layer base {
   :root {
@@ -82,44 +82,44 @@
     --mac-blue: #0A84FF;
     --mac-blue-600: #0a76e6;
     --mac-blue-700: #0868cc;
-
+ 
     /* Text */
     --ink: #0f172a;
     --ink-muted: #475569;
-
+ 
     /* Glass surfaces */
     --glass: rgba(255, 255, 255, 0.72);
     --glass-strong: rgba(255, 255, 255, 0.85);
-
+ 
     /* Borders & shadows */
     --glass-border: rgba(148, 163, 184, 0.35);
     --glass-border-strong: rgba(148, 163, 184, 0.55);
     --glass-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-
+ 
     /* Focus ring */
     --mac-ring: 0 0 0 3px rgba(10, 132, 255, 0.35);
   }
-
+ 
   .dark {
     --ink: #e5e7eb;
     --ink-muted: #9ca3af;
-
+ 
     --glass: rgba(2, 6, 23, 0.65);
     --glass-strong: rgba(2, 6, 23, 0.8);
-
+ 
     --glass-border: rgba(148, 163, 184, 0.22);
     --glass-border-strong: rgba(148, 163, 184, 0.38);
     --glass-shadow: 0 16px 40px rgba(2, 6, 23, 0.5);
-
+ 
     --mac-ring: 0 0 0 3px rgba(10, 132, 255, 0.45);
   }
-
+ 
   /* Selection tint */
   ::selection {
     background: color-mix(in srgb, var(--mac-blue) 24%, transparent);
   }
 }
-
+ 
 /* App backdrop (blueish mac gradient + subtle glows) */
 .mac-app-bg {
   min-height: 100vh;
@@ -134,7 +134,7 @@
     radial-gradient(900px 420px at 100% 110%, rgba(10,132,255,0.18), transparent 60%),
     linear-gradient(180deg, #0b1020 0%, #0d1225 100%);
 }
-
+ 
 /* Re-usable glass cards for your Step containers */
 .mac-card {
   background: var(--glass);
@@ -144,7 +144,7 @@
   border-radius: 22px;
   box-shadow: var(--glass-shadow);
 }
-
+ 
 /* Input family: select, textarea, inputs — mac focus ring */
 .mac-input {
   background: var(--glass-strong);
@@ -160,7 +160,7 @@
   border-color: var(--mac-blue);
   box-shadow: var(--mac-ring);
 }
-
+ 
 /* Apply mac-input universally without touching your TSX */
 @layer base {
   select,
@@ -185,7 +185,7 @@
     box-shadow: var(--mac-ring);
   }
 }
-
+ 
 /* Schema selection tiles (AI / Web) */
 .mac-tile {
   background: var(--glass-strong);
@@ -203,7 +203,7 @@
   box-shadow: 0 12px 28px rgba(10,132,255,0.25);
   transform: translateY(-1px);
 }
-
+ 
 /* Primary action button (Generate / Download) */
 .mac-primary {
   background: var(--mac-blue);
@@ -221,7 +221,7 @@
   box-shadow: 0 10px 26px rgba(10,132,255,0.42);
 }
 .mac-primary:active { transform: translateY(1px); }
-
+ 
 /* Subtle glass button (ghost) */
 .mac-ghost {
   background: var(--glass-strong);

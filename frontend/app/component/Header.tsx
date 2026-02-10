@@ -1,169 +1,126 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import ThemeToggle from './ThemeToggle';
 
-/**
- * iOS-style glass Header
- * - Keeps “DataSynth.जनन”
- * - Bolder, crisper, iOS-like gradient & separators
- * - Indents content by live sidebar width (--sidebar-w) so it never overlaps the rail
- * - Exposes --app-header-h for page offset
- */
 export default function Header() {
   const ref = useRef<HTMLElement | null>(null);
+  const [hidden, setHidden] = useState(false);
 
+  // Keep header height available via CSS var (for any sticky layout below)
   useEffect(() => {
     const headerEl = ref.current;
     if (!headerEl) return;
 
     const root = document.documentElement;
+    const setHeight = () =>
+      root.style.setProperty('--app-header-h', `${headerEl.offsetHeight}px`);
 
-    /** Maintain header height var for page layout */
-    const setHeaderHeightVar = () => {
-      root.style.setProperty('--app-header-h', `${headerEl.offsetHeight || 0}px`);
-    };
-    const headerRO = new ResizeObserver(setHeaderHeightVar);
-    headerRO.observe(headerEl);
-    setHeaderHeightVar();
+    const ro = new ResizeObserver(setHeight);
+    ro.observe(headerEl);
+    setHeight();
 
-    /** Sidebar width -> --sidebar-w */
-    const pickSidebar = () =>
-      document.getElementById('app-sidebar') ||
-      document.querySelector<HTMLElement>('.sidebar-rail') ||
-      null;
+    return () => ro.disconnect();
+  }, []);
 
-    let sidebarEl: HTMLElement | null = pickSidebar();
+  // Hide-on-scroll behavior (unchanged)
+  useEffect(() => {
+    const last = { y: window.scrollY };
+    let ticking = false;
 
-    const setSidebarWidthVar = () => {
-      const w = sidebarEl ? sidebarEl.getBoundingClientRect().width : 0;
-      root.style.setProperty('--sidebar-w', `${Math.max(0, Math.round(w))}px`);
-    };
-
-    let attempts = 0;
-    const maxAttempts = 60; // ~1s across frames
-    const bindSidebar = () => {
-      if (!sidebarEl) sidebarEl = pickSidebar();
-      if (sidebarEl) {
-        setSidebarWidthVar();
-        sidebarRO.observe(sidebarEl);
-      } else if (attempts++ < maxAttempts) {
-        requestAnimationFrame(bindSidebar);
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(() => {
+          if (y > last.y + 12 && y > 80) setHidden(true);
+          else if (y < last.y - 12) setHidden(false);
+          last.y = y;
+          ticking = false;
+        });
       }
     };
 
-    const sidebarRO = new ResizeObserver(setSidebarWidthVar);
-    requestAnimationFrame(bindSidebar);
-
-    const onWinResize = () => {
-      setHeaderHeightVar();
-      setSidebarWidthVar();
-    };
-    window.addEventListener('resize', onWinResize);
-
-    return () => {
-      headerRO.disconnect();
-      sidebarRO.disconnect();
-      window.removeEventListener('resize', onWinResize);
-    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   return (
     <header
       ref={ref}
-      className="
-        fixed inset-x-0 top-0 z-40
-        border-b border-white/20 dark:border-white/10
-        backdrop-blur-xl
-      "
-      // iOS-like blue glass gradient background
+      className="fixed inset-x-0 top-0 z-40 border-b border-white/10 backdrop-blur-xl"
       style={{
+        height: '60px',
         background:
-          'linear-gradient(180deg, rgba(14, 26, 56, 0.85) 0%, rgba(14, 26, 56, 0.72) 55%, rgba(14, 26, 56, 0.60) 100%)',
+          'linear-gradient(180deg, rgba(14,26,56,0.85), rgba(14,26,56,0.72) 55%, rgba(14,26,56,0.60))',
+        transform: hidden ? 'translateY(-110%)' : 'translateY(0)',
+        transition: 'transform 200ms',
+        // Avoid accidental clipping of any inner shadows/glows
+        overflow: 'visible',
       }}
     >
-      {/* A faint separator line like iOS */}
       <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px"
+        className="w-full h-full px-4 md:px-6 flex items-center justify-between"
         style={{
-          background:
-            'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 40%, rgba(255,255,255,0.25) 60%, transparent 100%)',
-        }}
-      />
-
-      {/* Inner content indented by sidebar width */}
-      <div
-        className="w-full px-4 md:px-6"
-        style={{
-          marginLeft: 'var(--sidebar-w, 0px)',
-          maxWidth: 'calc(100vw - var(--sidebar-w, 0px))',
-          transition: 'margin-left 240ms cubic-bezier(0.24, 0.8, 0.2, 1)',
+          /**
+           * Park header content to the right of the current sidebar width.
+           * We add a small gutter so the logo never kisses the rail edge.
+           * `--sidebar-w` is set by Sidebar; `--sidebar-gutter` is optional (defaults to 12px).
+           */
+          paddingLeft: 'calc(var(--sidebar-w, 0px) + var(--sidebar-gutter, 12px))',
+          maxWidth: '100vw',
+          position: 'relative',
+          zIndex: 1, // ensure above page content (rail is z-50)
         }}
       >
-        <div className="max-w-7xl mx-auto py-2.5 md:py-3">
-          {/* Small badge */}
-          <div className="flex justify-center">
+        {/* LEFT — LOGO */}
+        <div className="leading-tight select-none" style={{ whiteSpace: 'nowrap' }}>
+          <h1
+            className="tracking-tight"
+            style={{
+              fontSize: '22px',
+              fontWeight: 800,
+              color: 'white',
+              textShadow: '0 1px 4px rgba(0,0,0,0.3)',
+              lineHeight: 1.1,
+            }}
+          >
+            DataSynth
             <span
-              className="
-                inline-flex items-center gap-1
-                px-3 py-0.5 rounded-full
-                text-[10.5px] font-semibold
-                border
-              "
+              className="ml-1"
               style={{
-                color: 'rgba(185, 210, 255, 0.95)',
-                background:
-                  'linear-gradient(180deg, rgba(10,132,255,0.22) 0%, rgba(10,132,255,0.16) 100%)',
-                borderColor: 'rgba(135, 170, 255, 0.35)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18)',
+                color: '#7CC2FF',
+                textShadow: '0 1px 6px rgba(124,194,255,0.35)',
               }}
             >
-              DATA GENERATOR
+              .जनन
             </span>
-          </div>
+          </h1>
+          <p
+            style={{
+              marginTop: '1px',
+              fontSize: '12px',
+              color: 'rgba(220,230,255,0.9)',
+              lineHeight: 1,
+            }}
+          >
+            <b>Generate high-fidelity datasets</b>
+          </p>
+        </div>
 
-          {/* Title */}
-          <div className="mt-2 flex justify-center">
-            <h1
-              className="
-                leading-none text-center
-                tracking-tight
-              "
-              style={{
-                fontSize: 'clamp(26px, 2.1vw, 32px)',
-                fontWeight: 800,
-                letterSpacing: '-0.01em',
-                color: 'white',
-                textShadow: '0 1px 8px rgba(0,0,0,0.35)',
-              }}
-            >
-              <span>DataSynth</span>
-              <span
-                className="ml-1"
-                style={{
-                  color: '#7CC2FF', // iOS aqua-blue tint
-                  textShadow: '0 1px 10px rgba(124,194,255,0.35)',
-                  fontWeight: 800,
-                }}
-              >
-                .जनन
-              </span>
-            </h1>
-          </div>
-
-          {/* Subtitle */}
-          <div className="mt-1 flex justify-center">
-            <p
-              className="text-center"
-              style={{
-                fontSize: 'clamp(12px, 1.3vw, 15px)',
-                color: 'rgba(220,230,255,0.9)',
-                textShadow: '0 1px 6px rgba(0,0,0,0.3)',
-                maxWidth: 840,
-              }}
-            >
-              <b>Generate high-fidelity datasets</b>
-            </p>
+        {/* RIGHT — Controls (Back removed, Theme label removed) */}
+        <div className="flex items-center gap-2">
+          <div
+            className="
+              h-10 px-2
+              flex items-center
+              rounded-xl
+              border border-white/20
+              bg-white/5
+              text-white/90 text-sm
+            "
+          >
+            <ThemeToggle variant="bare" />
           </div>
         </div>
       </div>

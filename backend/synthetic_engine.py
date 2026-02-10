@@ -230,7 +230,7 @@ Sampling guidance:
 """
 
     client = Groq(api_key=api_key)
-    parsed = _groq_chat_json(client, model="qwen/qwen3-32b", system=sys, user=user, temperature=0.6, retries=2)
+    parsed = _groq_chat_json(client, model=model or "qwen/qwen3-32b", system=sys, user=user, temperature=0.6, retries=2)
     ai_rows = []
     if isinstance(parsed, dict):
         rows_val = parsed.get("rows")
